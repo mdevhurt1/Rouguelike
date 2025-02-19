@@ -90,13 +90,9 @@ class Enemy:
                     self.x, self.y = new_x, new_y
         
         self.move_counter += 1
-    
-    def teleport(self, walls, width, height):
-        while True:
-            x, y = random.randint(1, width-2), random.randint(1, height-2)
-            if self.is_valid_move(x, y, walls, width, height):
-                self.x, self.y = x, y
-                break
+
+def generate_map(width, height):
+    return [(random.randint(1, width-2), random.randint(1, height-2)) for _ in range(30)]
 
 def main(stdscr):
     curses.curs_set(0)
@@ -104,48 +100,40 @@ def main(stdscr):
     stdscr.timeout(100)
     
     height, width = stdscr.getmaxyx()
-    player = {'x': width // 2, 'y': height // 2, 'char': '@', 'hp': 10}
-    enemy = Enemy(random.randint(1, width-2), random.randint(1, height-2))
-    walls = [(random.randint(1, width-2), random.randint(1, height-2)) for _ in range(30)]
-    
     while True:
-        stdscr.clear()
-        stdscr.addch(player['y'], player['x'], player['char'])
-        stdscr.addch(enemy.y, enemy.x, enemy.char)
-        for wall in walls:
-            stdscr.addch(wall[1], wall[0], '#')
+        player = {'x': width // 2, 'y': height // 2, 'char': '@', 'hp': 10}
+        enemy = Enemy(random.randint(1, width-2), random.randint(1, height-2))
+        walls = generate_map(width, height)
+        goal = (random.randint(1, width-2), random.randint(1, height-2))
         
-        stdscr.addstr(0, 2, f"HP: {player['hp']}")
-        
-        key = stdscr.getch()
-        if key == ord('q'):
-            break
-        
-        new_x, new_y = player['x'], player['y']
-        if key == curses.KEY_UP:
-            new_y -= 1
-        elif key == curses.KEY_DOWN:
-            new_y += 1
-        elif key == curses.KEY_LEFT:
-            new_x -= 1
-        elif key == curses.KEY_RIGHT:
-            new_x += 1
-        
-        if enemy.is_valid_move(new_x, new_y, walls, width, height):
-            player['x'], player['y'] = new_x, new_y
-        
-        enemy.move(player['x'], player['y'], walls, width, height)
-        
-        if player['x'] == enemy.x and player['y'] == enemy.y:
-            player['hp'] -= 1
-            if player['hp'] <= 0:
-                stdscr.addstr(height//2, width//2 - 5, "YOU DIED!")
-                stdscr.refresh()
-                curses.napms(2000)
-                break
-            enemy.teleport(walls, width, height)
-        
-        stdscr.refresh()
+        while True:
+            stdscr.clear()
+            stdscr.addch(player['y'], player['x'], player['char'])
+            stdscr.addch(enemy.y, enemy.x, enemy.char)
+            stdscr.addch(goal[1], goal[0], 'G')
+            for wall in walls:
+                stdscr.addch(wall[1], wall[0], '#')
+            
+            stdscr.addstr(0, 2, f"HP: {player['hp']}")
+            
+            key = stdscr.getch()
+            if key == ord('q'):
+                return
+            
+            new_x, new_y = player['x'], player['y']
+            if key in [curses.KEY_UP, curses.KEY_DOWN, curses.KEY_LEFT, curses.KEY_RIGHT]:
+                new_x += (key == curses.KEY_RIGHT) - (key == curses.KEY_LEFT)
+                new_y += (key == curses.KEY_DOWN) - (key == curses.KEY_UP)
+            
+            if enemy.is_valid_move(new_x, new_y, walls, width, height):
+                player['x'], player['y'] = new_x, new_y
+            
+            if (player['x'], player['y']) == goal:
+                break  # Restart with a new map
+            
+            enemy.move(player['x'], player['y'], walls, width, height)
+            
+            stdscr.refresh()
     
 if __name__ == "__main__":
     curses.wrapper(main)
