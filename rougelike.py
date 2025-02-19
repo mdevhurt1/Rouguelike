@@ -15,13 +15,13 @@ class Enemy:
         return (x, y) not in walls and 0 < x < width - 1 and 0 < y < height - 1
     
     def has_line_of_sight(self, player_x, player_y, walls):
-        """ Check if there is a clear line of sight between the enemy and the player """
+        """ Check if there is a clear line of sight between the enemy and the player within 20 spaces """
         dx = player_x - self.x
         dy = player_y - self.y
         steps = max(abs(dx), abs(dy))
         
-        if steps == 0:
-            return True
+        if steps == 0 or steps > 20:
+            return False
         
         step_x = dx / steps
         step_y = dy / steps
